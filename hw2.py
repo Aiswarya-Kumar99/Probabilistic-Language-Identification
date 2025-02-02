@@ -32,7 +32,6 @@ def get_parameter_vectors():
         for line in f:
             char,prob=line.strip().split(" ")
             s[ord(char)-ord('A')]=float(prob)
-    f.close()
 
     return (e,s)
 
@@ -46,21 +45,53 @@ def shred(filename):
         content = re.sub(r'[^A-Z]','',content)
         letterCount = Counter(content)
         X.update(letterCount)
+    f.close()
     return X
 
+def classify(e,s,count,engPrior,spanPrior):
+    eng = math.log(engPrior)
+    span = math.log(spanPrior)
+    probAeng = count.get(chr(65)) * math.log(e[0])
+    probAspan = count.get(chr(65)) * math.log(s[0])
+    for i in range(0,26):
+        e_prob = e[i] if e[i] > 0 else 1e-10
+        s_prob = s[i] if s[i] > 0 else 1e-10
+        eng += count.get(chr(i+65)) * math.log(e_prob)
+        span += count.get(chr(i+65)) * math.log(s_prob)
+    if span - eng >=100:
+        probofEnglish = 0
+    elif span - eng <= -100:
+        probofEnglish = 1
+    else:
+        probofEnglish = 1 / (1 + (math.exp(span-eng)))
+    return probAeng,probAspan,eng,span,probofEnglish
 
 
 # TODO: add your code here for the assignment
 # You are free to implement it as you wish!
 # Happy Coding!
-if len(sys.argv)<2:
+if len(sys.argv)<4:
     print("Please enter the file to read")
 else:
+    #1.1 Build your own digital shredder
     filepath = sys.argv[1]
+    engPrior = sys.argv[2]
+    spanPrior = sys.argv[3]
     count = shred(filepath)
     fileName = Path(filepath).stem
     outputFile = f"{fileName}_out"
-    with open(outputFile,'w') as f:
-        f.write("Q1\n")
-        for char,freq in count.items():
-            f.write(f"{char} {freq}\n")
+    
+    #1.2 Language identification via Bayes rule
+    e,s = get_parameter_vectors()
+    probAeng,probAspan,eng,span,probofEnglish = classify(e,s,count,float(engPrior),float(spanPrior))
+    print("Q1")
+    for char,freq in count.items():
+            print(f"{char} {freq}")
+    print("Q2")
+    print(f"{probAeng:.4f}")
+    print(f"{probAspan:.4f}")
+    print("Q3")
+    print(f"{eng:.4f}")
+    print(f"{span:.4f}")
+    print("Q4")
+    print(f"{probofEnglish:.4f}")  
