@@ -1,7 +1,6 @@
 import sys
 import math
 import re
-from pathlib import Path
 from collections import Counter
 
 def get_parameter_vectors():
@@ -49,13 +48,14 @@ def shred(filename):
     return X
 
 def classify(e,s,count,engPrior,spanPrior):
+    print(engPrior,spanPrior)
     eng = math.log(engPrior)
     span = math.log(spanPrior)
-    probAeng = count.get(chr(65)) * math.log(e[0])
-    probAspan = count.get(chr(65)) * math.log(s[0])
+    probAeng = count.get(chr(65)) * math.log( e[0] if e[0] > 0 else float('-inf'))
+    probAspan = count.get(chr(65)) * math.log( s[0] if s[0] > 0 else float('-inf'))
     for i in range(0,26):
-        e_prob = e[i] if e[i] > 0 else 1e-10
-        s_prob = s[i] if s[i] > 0 else 1e-10
+        e_prob = e[i] if e[i] > 0 else float('-inf')
+        s_prob = s[i] if s[i] > 0 else float('-inf')
         eng += count.get(chr(i+65)) * math.log(e_prob)
         span += count.get(chr(i+65)) * math.log(s_prob)
     if span - eng >=100:
@@ -66,32 +66,27 @@ def classify(e,s,count,engPrior,spanPrior):
         probofEnglish = 1 / (1 + (math.exp(span-eng)))
     return probAeng,probAspan,eng,span,probofEnglish
 
-
-# TODO: add your code here for the assignment
-# You are free to implement it as you wish!
-# Happy Coding!
-if len(sys.argv)<4:
-    print("Please enter the file to read")
-else:
-    #1.1 Build your own digital shredder
-    filepath = sys.argv[1]
-    engPrior = sys.argv[2]
-    spanPrior = sys.argv[3]
-    count = shred(filepath)
-    fileName = Path(filepath).stem
-    outputFile = f"{fileName}_out"
-    
-    #1.2 Language identification via Bayes rule
-    e,s = get_parameter_vectors()
-    probAeng,probAspan,eng,span,probofEnglish = classify(e,s,count,float(engPrior),float(spanPrior))
-    print("Q1")
-    for char,freq in count.items():
-            print(f"{char} {freq}")
-    print("Q2")
-    print(f"{probAeng:.4f}")
-    print(f"{probAspan:.4f}")
-    print("Q3")
-    print(f"{eng:.4f}")
-    print(f"{span:.4f}")
-    print("Q4")
-    print(f"{probofEnglish:.4f}")  
+if __name__ == "__main__":
+    # TODO: add your code here for the assignment
+    # You are free to implement it as you wish!
+    # Happy Coding!
+    if len(sys.argv)!=4:
+        print("Incorrect number of arguments passed. Expected syntax is 'python3 hw2.py [letter file] [english prior] [spanish prior]'")
+    else:
+        filepath = sys.argv[1]
+        engPrior = float(sys.argv[2])
+        spanPrior = float(sys.argv[3])
+        count = shred(filepath)
+        e,s = get_parameter_vectors()
+        probAeng,probAspan,eng,span,probofEnglish = classify(e,s,count,engPrior,spanPrior)
+        print("Q1")
+        for char,freq in count.items():
+                print(f"{char} {freq}")
+        print("Q2")
+        print(f"{probAeng:.4f}")
+        print(f"{probAspan:.4f}")
+        print("Q3")
+        print(f"{eng:.4f}")
+        print(f"{span:.4f}")
+        print("Q4")
+        print(f"{probofEnglish:.4f}")  
